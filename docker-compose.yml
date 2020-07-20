@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  sql-service:
+    container_name: mysql
+    build: ./mysql/
+    volumes:
+         - ./mysql/init:/docker-entrypoint-initdb.d/:ro
+    environment:
+      MYSQL_ROOT_PASSWORD: 'test_pass' # NOTE: Change this
+      MYSQL_USER: 'test'
+      MYSQL_PASS: 'pass'
+    ports:
+      - "3306:3306"
+
+  ml-service:
+    container_name: machineLearning
+    build: ./machineLearning
+    volumes:
+      - ./mlData:/var/lib
+
+  web-service:
+    container_name: web
+    build: ./web
+    volumes:
+      - ./web:/var/www/html/
+    ports:
+      - "80:80"
