@@ -7,7 +7,7 @@ While doing my masters project I had to classify healthy and sick patients using
 # How to use
 1) Place labelled images in mlData folder
 2) Run docker images with docker-compose
-3) Open a web browser and type in localhost (NOTE, very little consideration has been taken towards security. DO NOT RUN THIS ON A PUBLIC NETWORK!!!!)
+3) Open a web browser and type in localhost (NOTE, I am not experienced in cybersecutiry, RUN ON A PUBLIC NETWORK AT YOUR OWN RISK)
 4) In website specify settings for the data in the mlData folder (e.g. number of catagories, naming convention). Instructions on the page should guide you.
 5) Use website to specify the architectures that will be tested. This is done by typing the different possibilites for example;
   * "conv2d,64,relu|tanh_dense,2,sigmoid" will test 2 models, one with the relu activation layer and the tanh activation layer. Once again further instructions are on the website.
