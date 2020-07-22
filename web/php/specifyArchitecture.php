@@ -1,6 +1,7 @@
 <?php
 $obj = array();
 $errors = array();
+$error = false;
 
 //////////////////////////// POST data handling //////////////////////////////
 
@@ -10,14 +11,26 @@ if (!empty($_POST)) {
 
   // make sure that required fields are filled
   foreach ($required as $form) {
-    if (!empty($_POST[$form])) {$obj[$form] = $_POST[$form];}
-    else {$errors[$form."Error"] = $form." is empty";}
+    if (!empty($_POST[$form])) {
+      $obj[$form] = $_POST[$form];
+      $errors[$form."Error"] = "";
+    }
+    else {
+      $errors[$form."Error"] = $form." is empty";
+      $error = true;
+    }
   }
 
   // make sure that certain sections are integers
   foreach ($mustBeInt as $form) {
-    if (is_numeric($_POST[$form])) {$obj[$form] = (int)$_POST[$form];}
-    else {$errors[$form."Error"] = $form." must be an integer";}
+    if (is_numeric($_POST[$form])) {
+      $obj[$form] = (int)$_POST[$form];
+      $errors[$form."Error"] = "";
+    }
+    else {
+      $errors[$form."Error"] = $form." must be an integer";
+      $error = true;
+    }
   }
 
 }
@@ -68,7 +81,7 @@ $obj['allArchitectures'] =  strToArray($obj["architecture"]);
 // if no errors, send to server
 // TODO This whole section is kinda spagetti code and needs to be refactored
 
-if (empty((array)$errors)) {
+if ($error == false) {
   // Connect to mysql container
   $servername = "mysql";
   $username = "root";
@@ -83,24 +96,26 @@ if (empty((array)$errors)) {
     $errors["connectError"] = "Connection failed: " . $conn->connect_error;
   }
   else {
+    $sql = "INSERT INTO IDKey (modelArchitecture, dataSet, imageDimentions, epochs, batchSize) VALUES(?,?,?,?,?)";
+    $stmt = $conn->prepare($sql);
+    $archBind = "";
+
+    if (!$stmt->bind_param("ssiii", $archBind, $obj["dataset"], $obj["resolution"], $obj["epochs"], $obj["batchSize"])) {
+      $errors["bindError"] = "mysqli failed to bind parameters";
+    }
 
     foreach($obj['allArchitectures'] as $arch) {
       // send data to mysql container
-      $sql = "INSERT INTO
-              IDKey (modelArchitecture, dataSet, imageDimentions, epochs, batchSize)
-              VALUES('".$arch."','".$obj["dataset"]."','".$obj["resolution"]."','".$obj["epochs"]."','".$obj["batchSize"]."')";
+      $archBind = $arch;
 
-      $sql = str_replace(array("\r", "\n"), '', $sql);
-      $sql = stripslashes($sql);
-
-      if ($conn->query($sql) === TRUE) {
+      if ($stmt->execute()) {
         $obj["sqlSucess"] = "Input to mysql server was sucessful";
       }
       else {
         $errors["sqlError"] = "Error in sql command" . $conn->error;
       }
     }
-
+    $stmt->close();
     $conn->close();
   }
 }

@@ -1,6 +1,7 @@
 <?php
 $values = array();
 $errors = array();
+$error = false;
 
 //////////////////////// POST data handling ///////////////////////////////////
 if (!empty($_POST)) {
@@ -8,12 +9,24 @@ if (!empty($_POST)) {
   $required = array("name", "filepath", "numOfCatagories", "catagoryDict");
 
   foreach ($required as $form) {
-    if (!empty($_POST[$form])) {$values[$form] = $_POST[$form];}
-    else {$errors[$form."Error"] = $form." is empty";}
+    if (!empty($_POST[$form])) {
+      $values[$form] = $_POST[$form];
+      $errors[$form."Error"] = "";
+    }
+    else {
+      $errors[$form."Error"] = $form." is empty";
+      $error = true;
+    }
   }
 
-  if (is_numeric($_POST["numOfCatagories"])) {$values["numOfCatagories"] = (int)$_POST["numOfCatagories"];}
-  else {$errors["numOfCatagories"."Error"] = "numOfCatagories must be an integer";}
+  if (is_numeric($_POST["numOfCatagories"])) {
+    $values["numOfCatagories"] = (int)$_POST["numOfCatagories"];
+    $errors["numOfCatagories"."Error"] = "";
+  }
+  else {
+    $errors["numOfCatagories"."Error"] = "numOfCatagories must be an integer";
+    $error = true;
+  }
 
 }
 else {$errors["postError"] = "_POST is empty";}
@@ -22,7 +35,7 @@ else {$errors["postError"] = "_POST is empty";}
 // if no errors, send to server
 // TODO This whole section is kinda spagetti code and needs to be refactored
 
-if (empty((array)$errors)) {
+if ($error == false) {
   // Connect to mysql container
   $servername = "mysql";
   $username = "root";
@@ -38,14 +51,15 @@ if (empty((array)$errors)) {
   }
   else {
     // send data to mysql container
-    $sql = "INSERT INTO
-            inputData (dataset, filepath, numOfCatagories, catagoryDict)
-            VALUES('".$values["name"]."','".$values["filepath"]."','".$values["numOfCatagories"]."','".$values["catagoryDict"]."')";
+    $sql = "INSERT INTO inputData (dataset, filepath, numOfCatagories, catagoryDict) VALUES(?,?,?,?)";
+    $stmt = $conn->prepare($sql);
 
-    $sql = str_replace(array("\r", "\n"), '', $sql);
-    $sql = stripslashes($sql);
-
-    if ($conn->query($sql) === TRUE) {
+    // Bind parameters to SQL prepared statment
+    if (!$stmt->bind_param('ssis', $values["name"], $values["filepath"], $values["numOfCatagories"], $values["catagoryDict"])) {
+      $errors["bindError"] = "mysqli failed to bind parameters";
+    }
+    // Attempt to execute the prepared statment
+    if ($stmt->execute()) {
       $errors["sqlSucess"] = "Input to mysql server was sucessful";
     }
     else {
@@ -56,11 +70,12 @@ if (empty((array)$errors)) {
         $errors["sqlError"] = "Error in sql command" . $conn->error;
       }
     }
+    $stmt->close();
     $conn->close();
   }
 }
 
 // encode into json and echo error messages
-$json = json_encode($errors);
+$json = json_encode(array_merge($errors, $values));
 echo $json;
 ?>

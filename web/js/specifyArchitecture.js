@@ -22,19 +22,17 @@ $(function () {
       success: function (result) {
         console.log("PHP script returned: " + result);
         jsonResult = JSON.parse(result);
-        var resolutionMsg = httpResult(jsonResult["resolutionError"]);
-        var epochMsg = httpResult(jsonResult["epochError"]);
-        var batchSizeMsg = httpResult(jsonResult["batchSizeError"]);
-        var datasetMsg = httpResult(jsonResult["datasetError"]);
-        var architectureMsg = httpResult(jsonResult["architectureError"]);
-        var successMsg = httpResult(jsonResult["sqlSucess"]);
 
-        $("#resolutionHelp").html(resolutionMsg);
-        $("#epochHelp").html(epochMsg);
-        $("#batchSizeHelp").html(batchSizeMsg);
-        $("#datasetHelp").html(datasetMsg);
-        $("#architectureHelp").html(architectureMsg);
-        $("#success").html(successMsg);
+        // list of possible inputs
+        const inputs = ["resolution", "epoch", "batchSize", "dataset", "architecture"];
+
+        // show any error messages sent by PHP script
+        for (let i=0; i<inputs.length; i++) {
+          $("#"+inputs[i]+"Help").text(jsonResult[inputs[i]+"Error"]);
+        }
+
+        // show success
+        $("#success").text(jsonResult["sqlSucess"]);
       },
       error: function() {
         console.log("Ajax failed post, check JavaScript file");

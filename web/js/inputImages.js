@@ -1,9 +1,3 @@
-// prevent html lines from showing undefined strings
-function httpResult(str) {
-  if (typeof(str) != 'undefined') {return "<p>" + str + "</p>"}
-  return  "";
-}
-
 // AJAX stuff, uses .html commands to edit the error messages on the page
 $(function () {
 
@@ -22,17 +16,17 @@ $(function () {
       success: function (result) {
         console.log("PHP script returned: " + result);
         jsonResult = JSON.parse(result);
-        var nameMsg = httpResult(jsonResult["nameError"]);
-        var filepathMsg = httpResult(jsonResult["filepathError"]);
-        var numOfCatagoriesMsg = httpResult(jsonResult["numOfCatagoriesError"]);
-        var catagoryDictMsg = httpResult(jsonResult["catagoryDictError"]);
-        var successMsg = httpResult(jsonResult["sqlSucess"]);
 
-        $("#nameHelp").html(nameMsg);
-        $("#filepathHelp").html(filepathMsg);
-        $("#numOfCatagoriesHelp").html(numOfCatagoriesMsg);
-        $("#catagoryDictHelp").html(catagoryDictMsg);
-        $("#success").html(successMsg);
+        // list of possible inputs
+        const inputs = ["name", "filepath", "numOfCatagories", "catagoryDict", "sqlSucess"];
+
+        // show any error messages sent by PHP script
+        for (let i=0; i<inputs.length; i++) {
+          $("#"+inputs[i]+"Help").text(jsonResult[inputs[i]+"Error"]);
+        }
+
+        // show success
+        $("#success").text(jsonResult["sqlSucess"]);
       },
       error: function() {
         console.log("Ajax failed post, check JavaScript file");
