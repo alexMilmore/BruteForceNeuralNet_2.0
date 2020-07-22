@@ -55,6 +55,45 @@
         </form>
       </div>
     </div>
+
+    <div style="margin-left:5%">
+      <h2> Instructions </h2>
+      <p>
+        Architectures are specified using a few rules. </br>
+         _ symbols seperate layers </br>
+         , symbols seperate settings </br>
+         multiple different settings may be used with the | charachter </br>
+         </br>
+         Layer settings
+         </br>
+         Each layer has 3 settings, the type of layer, settings based on the layer
+         type and the activation function. </br>
+       </p>
+       <h5> Single layer </h5>
+       <p>
+         conv2D, 3, relu </br>
+         This specifies a convolutional 2D layer, with 3 filters using the relu
+         activation function. </br>
+         Settings for layers </br>
+         currently conv2D and dense are supported </br>
+         conv2D; The number determins the number of filters
+         dense; The number determines the number of nodes in the dense layer</br>
+       </p>
+       <h5> Specifying multiple parameters </h5>
+       <p>
+         </br>
+         The point of this program is to test many different neural nets </br>
+         conv2D, 3|4, relu </br>
+         tests both a [conv2D, 3, relu] and a [conv2D, 4, relu] layer autonomously. </br>
+         This allows many different archetypes to be tested with ease. </br>
+       </p>
+       <h5> Final example </h5>
+       <p>
+         Bringing this all together we can specify a few architectures in one command </br>
+         conv2D,4|8|16,relu|tanh_conv2D,8|16|32,relu|tanh_dense,64|128|256,relu|tanh_dense,2,sigmoid</br>
+         This will test 144 different architectures, all with just one string.
+       </p>
+     </div>
     </br>
 
     </div> <!-- /container -->
