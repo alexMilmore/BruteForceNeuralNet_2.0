@@ -30,15 +30,22 @@ def textToArchitecture(text):
 def fixConvDense(architecture):
 
     for i in range(0, len(architecture) - 1):
-                currentLayer = architecture[i][0];
-                nextLayer = architecture[i+1][0];
+                currentLayer = architecture[i];
+                nextLayer = architecture[i+1];
 
                 if currentLayer != nextLayer:
-                    if (currentLayer == 'dense') and (nextLayer == 'conv2D'):
+                    # Conv and dense layers need to be reshaped to fit together
+                    if ('dense' in currentLayer[0]) and ('conv2D' in nextLayer[0]):
                         architecture[i][0] = 'denseTo2D';
-                    elif ('conv' in currentLayer) and (nextLayer == 'dense'):
+                    elif ('conv' in currentLayer[0]) and ('dense' in nextLayer[0]):
                         # add flatten layer to convert from 2d conv to 1d dense
                         architecture.insert(i+1, ['flatten', '1', '1']);
+                # resnet layers need the input to be the same shape as the layer
+                    elif ('Res' not in currentLayer[0]) and ('Res' in nextLayer[0]):
+                        if ('conv2D' in nextLayer[0]):
+                            architecture.insert(i+1, ['conv2D', nextLayer[1], nextLayer[2]]);
+                        if ('dense' in nextLayer[0]):
+                            architecture.insert(i+1, ['dense', nextLayer[1], nextLayer[2]]);
 
     return architecture;
 

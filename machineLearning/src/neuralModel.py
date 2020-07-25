@@ -51,6 +51,8 @@ class neuralModel:
             self.flatLayer();
         elif (type == 'dense'):
             self.denseLayer(constant, activation);
+        elif (type == 'denseRes'):
+            self.denseResLayer(constant, activation);
         elif (type == 'denseTo2D'):
             self.denseTo2DLayer(constant, activation);
         else:
@@ -80,6 +82,11 @@ class neuralModel:
     def denseLayer(self, sizes, activationFunctions):
         self.layer = Dense(sizes, activation=activationFunctions)(self.layer);
         self.layerCount += 1;
+
+    def denseResLayer(self, sizes, activationFunctions):
+        tempLayer = Dense(sizes, activation=activationFunctions)(self.layer);
+        self.layer = Average()([tempLayer, self.layer]);
+        self.layerCount += 2;
 
     def conv2DLayer(self, filters, activationFunction):
         self.layer = Conv2D(filters, kernel_size=(3,3), activation=activationFunction, padding = 'same')(self.layer);
