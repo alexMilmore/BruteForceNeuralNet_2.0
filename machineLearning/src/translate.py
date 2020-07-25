@@ -36,8 +36,9 @@ def fixConvDense(architecture):
                 if currentLayer != nextLayer:
                     if (currentLayer == 'dense') and (nextLayer == 'conv2D'):
                         architecture[i][0] = 'denseTo2D';
-                    elif (currentLayer == 'conv2D') and (nextLayer == 'dense'):
-                        architecture[i][0] = 'convFlatten';
+                    elif ('conv' in currentLayer) and (nextLayer == 'dense'):
+                        # add flatten layer to convert from 2d conv to 1d dense
+                        architecture.insert(i+1, ['flatten', '1', '1']);
 
     return architecture;
 

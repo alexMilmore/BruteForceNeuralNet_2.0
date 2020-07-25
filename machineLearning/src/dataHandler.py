@@ -14,12 +14,16 @@ class DataHandler:
         self.targetImporter = targetImporter;
         self.input = inputImporter.data;
         self.target = targetImporter.data;
+        self.inputShape = inputImporter.shape;
+        self.targetShape = targetImporter.shape;
 
     def read(self, filepath, inputSetting, targetSetting):
         self.inputImporter.read(filepath, inputSetting);
         self.targetImporter.read(filepath, targetSetting);
         self.input = self.inputImporter.data;
         self.target = self.targetImporter.data;
+        self.inputShape = self.inputImporter.shape;
+        self.targetShape = self.targetImporter.shape;
 
     def shuffle(self):
         self.input, self.target = shuffle(self.input, self.target);
@@ -67,6 +71,7 @@ class ImageImporter:
         # data is stored as a float, but is usually a smaller resolution than
         # raw data to prevent killing the computer
         self.data = None;
+        self.shape = (0,0);
 
     # Images may be a different resolutions, filetypes and colour encodings
     def readRaw(self, filepath):
@@ -79,6 +84,7 @@ class ImageImporter:
 
     # takes the raw data and generates a consistant set of images
     def read(self, filepath, shape):
+        self.shape = shape;
         self.readRaw(filepath);
         datashape = (self.rawData.shape[0], shape[0], shape[1]);
         data = np.zeros(datashape, dtype=np.float);
@@ -159,6 +165,7 @@ class CatagoryImporter:
     def __init__(self):
         self.name = 'Cat';
         self.data = None;
+        self.shape = (0,0);
 
     def read(self, filepath, catagoryLabels):
         data = [];
@@ -176,6 +183,7 @@ class CatagoryImporter:
     def __encodeData(self, classifications):
         encoder = OneHotEncoder(sparse = False);
         classifications = encoder.fit_transform(classifications);
+        self.shape = classifications.shape[1];
         return classifications
 
 # TODO .csv importer

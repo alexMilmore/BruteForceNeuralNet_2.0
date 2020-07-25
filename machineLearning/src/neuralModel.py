@@ -1,4 +1,4 @@
-from keras.layers import Input, Dense, Conv2D, Reshape, Flatten, MaxPooling2D, UpSampling2D
+from keras.layers import Input, Dense, Conv2D, Reshape, Flatten, MaxPooling2D, UpSampling2D, Lambda, Average
 from keras.models import Model, Sequential
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -9,11 +9,19 @@ class neuralModel:
     def __init__(self, architecture, inputHandler):
         # String specifying the architecture of the network
         self.architectureString = self.genName(architecture);
+
         # Make model
-        self.model = Sequential();
+        inp = Input(shape = (64, 64, 1));
+        # This is an identity layer that exists to initilaise the self.layer variable
+        # this means that I can connect all other layers to self.layer
+        self.layer = Lambda(lambda x: x)(inp);
+
         self.layerCount = 0;
         for i in range(0, len(architecture)):
-            self.layerCount += self.layerFunction(self.model, architecture[i][0], int(architecture[i][1]), architecture[i][2]);
+            self.layerFunction(architecture[i][0], int(architecture[i][1]), architecture[i][2]);
+
+        # Create and compile model
+        self.model = Model(inp, self.layer);
         self.model.compile(optimizer='adam', loss='binary_crossentropy', metrics = ['accuracy'])
         self.inputHandler = inputHandler;
 
@@ -29,79 +37,58 @@ class neuralModel:
 
     ### Different layer functions. These were designed to make a standard method
     # for creating layers from an array of settings
-    def layerFunction(self, model, type, constant, activation):
+    def layerFunction(self, type, constant, activation):
         layerCount = 0;
-        if (type == 'convSqueeze'):
-            layerCount = self.convSqueezeLayer(model, constant, activation);
-            return layerCount;
-        elif (type == 'convExpand'):
-            layerCount = self.convExpandLayer(model, constant, activation);
-            return layerCount;
-        elif (type == 'convFlatten'):
-            layerCount = self.convFlatLayer(model, constant, activation);
-            return layerCount;
+        if (type == 'convPool'):
+            self.convPoolLayer(constant, activation);
+        elif (type == 'convUpsample'):
+            self.convUpsampleLayer(constant, activation);
         elif (type == 'conv2D'):
-            layerCount = self.conv2DLayers(model, [constant], [activation]);
-            return layerCount;
+            self.conv2DLayer(constant, activation);
+        elif (type == 'conv2DRes'):
+            self.conv2DResLayer(constant, activation);
+        elif (type == 'flatten'):
+            self.flatLayer();
         elif (type == 'dense'):
-            layerCount = self.denseLayers(model, [constant], [activation]);
-            return layerCount;
+            self.denseLayer(constant, activation);
         elif (type == 'denseTo2D'):
-            layerCount = self.denseTo2DLayer(model, constant, activation);
-            return layerCount;
+            self.denseTo2DLayer(constant, activation);
         else:
             print("Unrecognised layer type in autoencoder model, cannot process");
 
     ####### Functions for building neural networks
     # applies a convolution and a pooling layer
-    def convSqueezeLayer(self, model, convSize, activaionFunction):
-        model.add(Conv2D(convSize, kernel_size=(3,3), activation=activaionFunction, padding='same'));
-        model.add(MaxPooling2D((2,2)));
-        return 2;
+    def convPoolLayer(self, convSize, activaionFunction):
+        self.layer = Conv2D(convSize, kernel_size=(3,3), activation=activaionFunction, padding='same')(self.layer);
+        self.layer = MaxPooling2D((2,2))(self.layer);
+        self.layerCount += 2;
 
-    # applies multiple convolution and pooling layers
-    def convSqueezeLayers(self, model, convLayers, activaionFunction):
-        counter = 0;
-        for i in range(0, len(convLayers)):
-            counter += self.convSqueezeLayer(model, convLayers[i], activaionFunction[i]);
-        return counter;
+    def flatLayer(self):
+        self.layer = Flatten()(self.layer);
+        self.layerCount += 1;
 
-    # applies a convolution and outputs 1d rather than 2d data
-    def convFlatLayer(self, model, convSize, activaionFunction):
-        model.add(Conv2D(convSize, kernel_size=(3,3), activation=activaionFunction, padding='same'));
-        model.add(Conv2D(1, kernel_size=(3,3), activation=activaionFunction, padding='same'));
-        model.add(Flatten());
-        return 3;
+    def convUpsampleLayer(self, convSize, activaionFunction):
+        self.layer = Conv2D(convSize, kernel_size=(3,3), activation=activaionFunction, padding='same')(self.layer);
+        self.layer = UpSampling2D((2, 2))(self.layer);
+        self.layerCount += 2;
 
-    def convExpandLayer(self, model, convSize, activaionFunction):
-        model.add(Conv2D(convSize, kernel_size=(3,3), activation=activaionFunction, padding='same'));
-        model.add(UpSampling2D((2, 2)));
-        return 2;
+    def denseTo2DLayer(self, sideLength, activationFunction):
+        self.layer = Dense((sideLength)*(sideLength), activation=activationFunction)(self.layer);
+        self.layer = Reshape((sideLength, sideLength, 1))(self.layer);
+        self.layerCount += 2;
 
-    def convExpandLayers(self, model, convLayers, activaionFunction):
-        counter = 0;
-        for i in range(0, len(convLayers)):
-            counter += self.convExpandLayer(model, convLayers[i], activaionFunction[i]);
-        return counter;
+    def denseLayer(self, sizes, activationFunctions):
+        self.layer = Dense(sizes, activation=activationFunctions)(self.layer);
+        self.layerCount += 1;
 
-    def denseTo2DLayer(self, model, sideLength, activationFunction):
-        model.add(Dense((sideLength)*(sideLength), activation=activationFunction));
-        model.add(Reshape((sideLength, sideLength, 1)));
-        return 2;
+    def conv2DLayer(self, filters, activationFunction):
+        self.layer = Conv2D(filters, kernel_size=(3,3), activation=activationFunction, padding = 'same')(self.layer);
+        self.layerCount += 1;
 
-    def denseLayers(self, model, sizes, activationFunctions):
-        counter = 0;
-        for i in range(0, len(sizes)):
-            model.add(Dense(sizes[i], activation=activationFunctions[i]));
-            counter += 1;
-        return counter;
-
-    def conv2DLayers(self, model, sizes, activationFunctions):
-        counter = 0;
-        for i in range(0, len(sizes)):
-            model.add(Conv2D(sizes[i], kernel_size=(3,3), activation=activationFunctions[i], padding = 'same'));
-            counter += 1;
-        return counter;
+    def conv2DResLayer(self, filters, activationFunction):
+        tempLayer = Conv2D(filters, kernel_size=(3,3), activation=activationFunction, padding = 'same')(self.layer);
+        self.layer = Average()([tempLayer, self.layer]);
+        self.layerCount += 2;
 
     def train(self, numOfEpochs, batchSize):
         self.history = self.model.fit(self.inputHandler.x_train, self.inputHandler.y_train, \
